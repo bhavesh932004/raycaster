@@ -3,6 +3,8 @@
     var B_HEIGHT = 500;
     var B_ROWS = 10;
     var B_COLS = 10;
+    var NEAR_PLANE = 1;
+    var FOV = Math.PI * 0.5;
     var SCENE = [
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -15,6 +17,30 @@
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     ];
+    function add(p1, p2) {
+        return { x: p1.x + p2.x, y: p1.y + p2.y };
+    }
+    function sub(p1, p2) {
+        return { x: p1.x - p2.x, y: p1.y - p2.y };
+    }
+    function scale(p, s) {
+        return { x: p.x * s, y: p.y * s };
+    }
+    function hvUnitVectors(t) {
+        return { x: Math.cos(t), y: Math.sin(t) };
+    }
+    function normalize(p) {
+        var len = distance(p, { x: 0, y: 0 });
+        if (len === 0)
+            return { x: 0, y: 0 };
+        return { x: p.x / len, y: p.x / len };
+    }
+    function rotate(p, t) {
+        return {
+            x: p.x * Math.cos(t) - p.y * Math.sin(t),
+            y: p.x * Math.sin(t) + p.y * Math.cos(t)
+        };
+    }
     function drawLine(ctx, p1, p2, color) {
         ctx.beginPath();
         ctx.moveTo(p1.x, p1.y);
@@ -22,9 +48,9 @@
         ctx.strokeStyle = color;
         ctx.stroke();
     }
-    function drawPoint(ctx, p, r, color) {
+    function drawPoint(ctx, p, radius, color) {
         ctx.beginPath();
-        ctx.arc(p.x, p.y, r, 0, 2 * Math.PI);
+        ctx.arc(p.x, p.y, radius, 0, 2 * Math.PI);
         ctx.fillStyle = color;
         ctx.fill();
     }
@@ -72,7 +98,7 @@
             y: Math.floor(p2.y + (0.000001 * (dy >= 0 ? 1 : -1)))
         };
     }
-    function drawBoard(ctx, p2) {
+    function drawSceneMap(ctx, player) {
         ctx.reset();
         ctx.lineWidth = 0.02;
         ctx.scale(B_WIDTH / B_COLS, B_HEIGHT / B_ROWS);
@@ -82,37 +108,41 @@
         for (var c = 0; c <= B_COLS; c++) {
             drawLine(ctx, { x: 0, y: c }, { x: B_ROWS, y: c }, "#000000");
         }
-        var p1 = { x: B_COLS * 0.31, y: B_ROWS * 0.43 };
-        drawPoint(ctx, p1, 0.2, "#ff0000");
-        if (p2 == undefined)
-            return;
-        for (;;) {
-            drawPoint(ctx, p2, 0.08, "#ff0000");
-            drawLine(ctx, p1, p2, "#ff0000");
-            var cell = getCellFromPoints(p1, p2);
-            if (isCellOutOfBoard(cell))
-                break;
-            var p3 = nextPoint(p1, p2);
-            if (p3 === null)
-                break;
-            p1 = p2;
-            p2 = p3;
-        }
+        drawPoint(ctx, player.pos, 0.2, "#ff0000");
+        var len = Math.tan(FOV * 0.5) * NEAR_PLANE;
+        var np = add(player.pos, scale(hvUnitVectors(player.dir), NEAR_PLANE));
+        var npl = add(np, scale(rotate(normalize(sub(np, player.pos)), Math.PI * 0.5), len));
+        var npr = add(np, scale(rotate(normalize(sub(np, player.pos)), -1 * Math.PI * 0.5), len));
+        console.log(player.pos, np, npl);
+        drawLine(ctx, np, npl, "#ff0000");
+        drawLine(ctx, np, npr, "#ff0000");
+        drawLine(ctx, player.pos, npl, "#ff0000");
+        drawLine(ctx, player.pos, npr, "#ff0000");
+        //for(;;) {
+        //    drawPoint(ctx, p2, 0.08, "#ff0000");
+        //	 drawLine(ctx, p1, p2, "#ff0000");
+        //    const cell: Point = getCellFromPoints(p1, p2);
+        //    if (isCellOutOfBoard(cell)) break;
+        //	 const p3: Point =  nextPoint(p1, p2);    
+        //    if (p3 === null) break;
+        //    p1 = p2;
+        //    p2 = p3;
+        //}
     }
     function init() {
-        var canvas = document.getElementById("ray-caster");
-        var ctx = canvas.getContext("2d");
-        if (!ctx) {
-            throw new Error("Initialization failed");
-        }
-        canvas.width = B_WIDTH;
-        canvas.height = B_HEIGHT;
-        var handleMouseMove = function (evt) {
-            var p2 = { x: evt.offsetX / B_WIDTH * B_COLS, y: evt.offsetY / B_HEIGHT * B_ROWS };
-            drawBoard(ctx, p2);
+        var sceneMap = document.getElementById("scene-map");
+        if (sceneMap === null)
+            throw new Error("Failed to create scene map.");
+        var ctx = sceneMap.getContext("2d");
+        if (ctx === null)
+            throw new Error("Browser doesn't support 2D context");
+        sceneMap.width = B_WIDTH;
+        sceneMap.height = B_HEIGHT;
+        var player = {
+            pos: { x: B_COLS * 0.95, y: B_ROWS * 0.95 },
+            dir: Math.PI * 1.25,
         };
-        canvas.addEventListener("mousemove", handleMouseMove);
-        drawBoard(ctx, undefined);
+        drawSceneMap(ctx, player);
     }
     init();
 })();
