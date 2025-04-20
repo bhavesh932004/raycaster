@@ -1,6 +1,6 @@
 (function () {
-    var B_WIDTH = 500;
-    var B_HEIGHT = 500;
+    var B_WIDTH = 200;
+    var B_HEIGHT = 200;
     var B_ROWS = 10;
     var B_COLS = 10;
     var NEAR_PLANE = 1;
@@ -10,15 +10,16 @@
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, "red", "blue", "green", "orange", 0, 0, 0],
         [0, 0, 0, "yellow", 0, 0, 0, "purple", 0, 0],
-        [0, 0, 0, 0, "red", 0, 0, "red", 0, 0],
-        [0, 0, 0, 0, 0, "blue", 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, "orange", 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, "green", 0, 0],
+        [0, 0, 0, "blue", 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, "yellow", "magenta", "blue", 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     ];
-    var S_WIDTH = 100;
-    var S_HEIGHT = 50;
+    var P_WIDTH = 200;
+    var S_WIDTH = 800;
+    var S_HEIGHT = 500;
     var PLAYER_STEP_LEN = 0.5;
     function add(p1, p2) {
         return { x: p1.x + p2.x, y: p1.y + p2.y };
@@ -107,9 +108,9 @@
     function renderScene(sCtx, ctx, player, p1, p2) {
         sCtx.reset();
         sCtx.fillStyle = "#000000";
-        sCtx.fillRect(0, 0, 800, 500);
-        for (var x = 0; x < S_WIDTH; x++) {
-            var p = lerp(p1, p2, x / S_WIDTH);
+        sCtx.fillRect(0, 0, S_WIDTH, S_HEIGHT);
+        for (var x = 0; x < P_WIDTH; x++) {
+            var p = lerp(p1, p2, x / P_WIDTH);
             var pa = player.pos, pb = p, cell = { x: 0, y: 0 }, pc = null;
             for (;;) {
                 cell = getCellFromPoints(pa, pb);
@@ -125,9 +126,13 @@
             if (pb === null || isCellOutOfBoard(cell) || SCENE[cell.y][cell.x] === 0)
                 continue;
             drawPoint(ctx, pb, 0.08, "#000000");
-            var wallHeight = 500 / distance(pb, player.pos);
+            var rayV = sub(pb, player.pos);
+            var dirV = hvUnitVectors(player.dir);
+            var dotProduct = rayV.x * dirV.x + rayV.y * dirV.y;
+            var wallHeight = S_HEIGHT / dotProduct;
+            var wallWidth = S_WIDTH / P_WIDTH;
             sCtx.fillStyle = SCENE[cell.y][cell.x];
-            sCtx.fillRect(x * 800 / S_WIDTH, 0.5 * (500 - wallHeight), 800 / S_WIDTH, wallHeight);
+            sCtx.fillRect(x * wallWidth, 0.5 * (S_HEIGHT - wallHeight), wallWidth, wallHeight);
         }
     }
     function drawSceneMap(screenCtx, ctx, player) {
@@ -166,8 +171,8 @@
         var screenCtx = screen.getContext("2d");
         if (screenCtx === null)
             throw new Error("Browser doesn't support 2D context");
-        screen.width = 800;
-        screen.height = 500;
+        screen.width = S_WIDTH;
+        screen.height = S_HEIGHT;
         var sceneMap = document.getElementById("scene-map");
         if (sceneMap === null)
             throw new Error("Failed to create scene map.");

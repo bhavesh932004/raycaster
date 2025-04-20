@@ -1,6 +1,6 @@
 (() => {
-	 const B_WIDTH: number = 500;
-	 const B_HEIGHT: number = 500;
+	 const B_WIDTH: number = 200;
+	 const B_HEIGHT: number = 200;
 	 const B_ROWS: number = 10;
 	 const B_COLS: number = 10;
 	 const NEAR_PLANE: number = 1;
@@ -10,15 +10,16 @@
 	 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 	 	[0, 0, 0, "red", "blue", "green", "orange", 0, 0, 0],
 	 	[0, 0, 0, "yellow", 0, 0, 0, "purple", 0, 0],
-	 	[0, 0, 0, 0, "red", 0, 0, "red", 0, 0],
-	 	[0, 0, 0, 0, 0, "blue", 0, 0, 0, 0],
-	 	[0, 0, 0, 0, 0, 0, "orange", 0, 0, 0],
-	 	[0, 0, 0, 0, 0, 0, 0, "green", 0, 0],
+	 	[0, 0, 0, "blue", 0, 0, 0, 0, 0, 0],
+	 	[0, 0, 0, "yellow", "magenta", "blue", 0, 0, 0, 0],
+	 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 	 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 	 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 	 ];
-	 const S_WIDTH: number = 100;
-	 const S_HEIGHT: number = 50;
+	 const P_WIDTH: number = 200;
+	 const S_WIDTH: number = 800;
+	 const S_HEIGHT: number = 500;
 	 const PLAYER_STEP_LEN: number = 0.5;
 
 	 type Point = { x: number, y: number };
@@ -128,9 +129,9 @@
 	 function renderScene(sCtx: CanvasRenderingContext2D, ctx, player: Player, p1: Point, p2: Point) {
 		 sCtx.reset();
 		 sCtx.fillStyle = "#000000";
-		 sCtx.fillRect(0, 0, 800, 500);
-		 for (let x = 0; x < S_WIDTH; x++) {
-			 const p: Point = lerp(p1, p2, x / S_WIDTH); 
+		 sCtx.fillRect(0, 0, S_WIDTH, S_HEIGHT);
+		 for (let x = 0; x < P_WIDTH; x++) {
+			 const p: Point = lerp(p1, p2, x / P_WIDTH); 
 			 let pa = player.pos,
 				 pb = p,
 				 cell = { x: 0, y: 0},
@@ -146,9 +147,13 @@
 			 console.log(pb, isCellOutOfBoard(cell));
 			 if (pb === null || isCellOutOfBoard(cell) || SCENE[cell.y][cell.x] === 0) continue;
 			 drawPoint(ctx, pb, 0.08, "#000000");
-			 const wallHeight: number = 500 / distance(pb, player.pos);
+			 const rayV: Point = sub(pb, player.pos);
+			 const dirV: Point = hvUnitVectors(player.dir);
+			 const dotProduct: number = rayV.x * dirV.x + rayV.y * dirV.y;
+			 const wallHeight: number = S_HEIGHT / dotProduct;
+			 const wallWidth: number = S_WIDTH / P_WIDTH;
 			 sCtx.fillStyle = SCENE[cell.y][cell.x];
-			 sCtx.fillRect(x * 800 / S_WIDTH, 0.5 * (500 - wallHeight), 800 / S_WIDTH, wallHeight);
+			 sCtx.fillRect(x * wallWidth, 0.5 * (S_HEIGHT - wallHeight), wallWidth, wallHeight);
 		 }
 	 }
 
@@ -191,8 +196,8 @@
 		 const screenCtx = screen.getContext("2d") as CanvasRenderingContext2D | null;
 		 if (screenCtx === null) 
 		     throw new Error("Browser doesn't support 2D context");
-		 screen.width = 800;
-		 screen.height = 500;
+		 screen.width = S_WIDTH;
+		 screen.height = S_HEIGHT;
 
 		 const sceneMap = document.getElementById("scene-map") as HTMLCanvasElement | null;
 		 if (sceneMap === null) 
