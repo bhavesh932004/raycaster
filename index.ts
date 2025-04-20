@@ -5,18 +5,21 @@
 	 const B_COLS: number = 10;
 	 const NEAR_PLANE: number = 1;
 	 const FOV: number = Math.PI * 0.5;
-	 const SCENE: number[][] = [
+	 const SCENE: any[][] = [
 	 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 	 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-	 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-	 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-	 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-	 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-	 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-	 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	 	[0, 0, 0, "red", "blue", "green", "orange", 0, 0, 0],
+	 	[0, 0, 0, "yellow", 0, 0, 0, "purple", 0, 0],
+	 	[0, 0, 0, 0, "red", 0, 0, "red", 0, 0],
+	 	[0, 0, 0, 0, 0, "blue", 0, 0, 0, 0],
+	 	[0, 0, 0, 0, 0, 0, "orange", 0, 0, 0],
+	 	[0, 0, 0, 0, 0, 0, 0, "green", 0, 0],
 	 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 	 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 	 ];
+	 const S_WIDTH: number = 100;
+	 const S_HEIGHT: number = 50;
+	 const PLAYER_STEP_LEN: number = 0.5;
 
 	 type Point = { x: number, y: number };
 	 type Player = { pos: Point, dir: number };
@@ -117,8 +120,39 @@
 			y: Math.floor(p2.y + (0.000001 * (dy >= 0 ? 1 : -1)))
 		 }
 	 }
+	
+ 	 function lerp(p1: Point, p2: Point, s: number): Point {
+		 return add(p1, scale(sub(p2, p1), s));
+	 }
 
-	 function drawSceneMap(ctx: CanvasRenderingContext2D, player: Player) {
+	 function renderScene(sCtx: CanvasRenderingContext2D, ctx, player: Player, p1: Point, p2: Point) {
+		 sCtx.reset();
+		 sCtx.fillStyle = "#000000";
+		 sCtx.fillRect(0, 0, 800, 500);
+		 for (let x = 0; x < S_WIDTH; x++) {
+			 const p: Point = lerp(p1, p2, x / S_WIDTH); 
+			 let pa = player.pos,
+				 pb = p,
+				 cell = { x: 0, y: 0},
+				 pc = null;
+			 for(;;) {
+			     cell = getCellFromPoints(pa, pb);
+			     if (isCellOutOfBoard(cell) || SCENE[cell.y][cell.x]) break;
+			 	 const pc: Point =  nextPoint(pa, pb);    
+			     if (pc === null) break;
+			     pa = pb;
+			     pb = pc;
+			 }
+			 console.log(pb, isCellOutOfBoard(cell));
+			 if (pb === null || isCellOutOfBoard(cell) || SCENE[cell.y][cell.x] === 0) continue;
+			 drawPoint(ctx, pb, 0.08, "#000000");
+			 const wallHeight: number = 500 / distance(pb, player.pos);
+			 sCtx.fillStyle = SCENE[cell.y][cell.x];
+			 sCtx.fillRect(x * 800 / S_WIDTH, 0.5 * (500 - wallHeight), 800 / S_WIDTH, wallHeight);
+		 }
+	 }
+
+	 function drawSceneMap(screenCtx: CanvasRenderingContext2D, ctx: CanvasRenderingContext2D, player: Player) {
 		 ctx.reset();
 		 ctx.lineWidth = 0.02;
 		 ctx.scale(B_WIDTH / B_COLS, B_HEIGHT / B_ROWS);
@@ -128,48 +162,76 @@
 		 for (let c = 0; c <= B_COLS; c++) {
 			 drawLine(ctx, {x: 0, y: c}, {x: B_ROWS, y: c}, "#000000");
 		 }
-
+		 
+		 for (let r = 0; r < B_ROWS; r++) {
+			 for (let c = 0; c < B_COLS; c++) {
+				 if (!SCENE[r][c]) continue;
+				 ctx.fillStyle = SCENE[r][c];
+				 ctx.fillRect(c, r, 1, 1);
+			 }
+		 }
+		
 		 drawPoint(ctx, player.pos, 0.2, "#ff0000");
 		 const len: number = Math.tan(FOV * 0.5) * NEAR_PLANE;
 		 const np: Point = add(player.pos, scale(hvUnitVectors(player.dir), NEAR_PLANE));
-		 const npl: Point = add(np, scale(rotate(normalize(sub(np, player.pos)), Math.PI * 0.5), len));
-		 const npr: Point = add(np, scale(rotate(normalize(sub(np, player.pos)), -1 * Math.PI * 0.5), len));
-		 console.log(player.pos, np, npl);
+		 const npl: Point = sub(np, scale(rotate(sub(np, player.pos), Math.PI * 0.5), len));
+		 const npr: Point = add(np, scale(rotate(sub(np, player.pos), Math.PI * 0.5), len));
 		 drawLine(ctx, np, npl, "#ff0000");
 		 drawLine(ctx, np, npr, "#ff0000");
 		 drawLine(ctx, player.pos, npl, "#ff0000");
 		 drawLine(ctx, player.pos, npr, "#ff0000");
-
-
-	
-		 //for(;;) {
-		 //    drawPoint(ctx, p2, 0.08, "#ff0000");
-		 //	 drawLine(ctx, p1, p2, "#ff0000");
-		 //    const cell: Point = getCellFromPoints(p1, p2);
-		 //    if (isCellOutOfBoard(cell)) break;
-		 //	 const p3: Point =  nextPoint(p1, p2);    
-		 //    if (p3 === null) break;
-		 //    p1 = p2;
-		 //    p2 = p3;
-		 //}
+		
+		 renderScene(screenCtx, ctx, player, npl, npr);
 	 }
 
 	 function init() {
+		 const screen = document.getElementById("screen") as HTMLCanvasElement | null;
+		 if (screen === null) 
+		     throw new Error("Failed to create screen.");
+		 const screenCtx = screen.getContext("2d") as CanvasRenderingContext2D | null;
+		 if (screenCtx === null) 
+		     throw new Error("Browser doesn't support 2D context");
+		 screen.width = 800;
+		 screen.height = 500;
+
 		 const sceneMap = document.getElementById("scene-map") as HTMLCanvasElement | null;
 		 if (sceneMap === null) 
 			 throw new Error("Failed to create scene map.");
 		 const ctx = sceneMap.getContext("2d") as CanvasRenderingContext2D | null;
 		 if (ctx === null) 
 			 throw new Error("Browser doesn't support 2D context");
-
 		 sceneMap.width = B_WIDTH;
 		 sceneMap.height = B_HEIGHT;
-
 		 const player: Player = { 
 			pos: {x: B_COLS * 0.95, y: B_ROWS * 0.95},
 			dir: Math.PI * 1.25,
 		 };
-		 drawSceneMap(ctx, player);
+		
+		 const handleKeyDown = (evt: KeyboardEvent) => {
+			 if (evt.repeat) return;
+
+			 switch (evt.key) {
+				 case 'j': {
+							   player.pos = add(player.pos, scale(hvUnitVectors(player.dir), PLAYER_STEP_LEN));
+							   break;
+						   }
+				 case 'k': {
+							   player.pos = add(player.pos, scale(hvUnitVectors(player.dir), -1 * PLAYER_STEP_LEN));
+							   break;
+						   }
+				 case 'h': {
+							   player.dir -= Math.PI * 0.1;
+							   break;
+						   }
+				 case 'l': {
+							   player.dir += Math.PI * 0.1;
+							   break;
+						   }
+			 }
+			 drawSceneMap(screenCtx, ctx, player);
+		 };
+		 window.addEventListener("keydown", handleKeyDown);
+		 drawSceneMap(screenCtx, ctx, player);
 	 }
 
 	 init();

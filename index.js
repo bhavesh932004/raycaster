@@ -8,15 +8,18 @@
     var SCENE = [
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, "red", "blue", "green", "orange", 0, 0, 0],
+        [0, 0, 0, "yellow", 0, 0, 0, "purple", 0, 0],
+        [0, 0, 0, 0, "red", 0, 0, "red", 0, 0],
+        [0, 0, 0, 0, 0, "blue", 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, "orange", 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, "green", 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     ];
+    var S_WIDTH = 100;
+    var S_HEIGHT = 50;
+    var PLAYER_STEP_LEN = 0.5;
     function add(p1, p2) {
         return { x: p1.x + p2.x, y: p1.y + p2.y };
     }
@@ -98,7 +101,36 @@
             y: Math.floor(p2.y + (0.000001 * (dy >= 0 ? 1 : -1)))
         };
     }
-    function drawSceneMap(ctx, player) {
+    function lerp(p1, p2, s) {
+        return add(p1, scale(sub(p2, p1), s));
+    }
+    function renderScene(sCtx, ctx, player, p1, p2) {
+        sCtx.reset();
+        sCtx.fillStyle = "#000000";
+        sCtx.fillRect(0, 0, 800, 500);
+        for (var x = 0; x < S_WIDTH; x++) {
+            var p = lerp(p1, p2, x / S_WIDTH);
+            var pa = player.pos, pb = p, cell = { x: 0, y: 0 }, pc = null;
+            for (;;) {
+                cell = getCellFromPoints(pa, pb);
+                if (isCellOutOfBoard(cell) || SCENE[cell.y][cell.x])
+                    break;
+                var pc_1 = nextPoint(pa, pb);
+                if (pc_1 === null)
+                    break;
+                pa = pb;
+                pb = pc_1;
+            }
+            console.log(pb, isCellOutOfBoard(cell));
+            if (pb === null || isCellOutOfBoard(cell) || SCENE[cell.y][cell.x] === 0)
+                continue;
+            drawPoint(ctx, pb, 0.08, "#000000");
+            var wallHeight = 500 / distance(pb, player.pos);
+            sCtx.fillStyle = SCENE[cell.y][cell.x];
+            sCtx.fillRect(x * 800 / S_WIDTH, 0.5 * (500 - wallHeight), 800 / S_WIDTH, wallHeight);
+        }
+    }
+    function drawSceneMap(screenCtx, ctx, player) {
         ctx.reset();
         ctx.lineWidth = 0.02;
         ctx.scale(B_WIDTH / B_COLS, B_HEIGHT / B_ROWS);
@@ -108,28 +140,34 @@
         for (var c = 0; c <= B_COLS; c++) {
             drawLine(ctx, { x: 0, y: c }, { x: B_ROWS, y: c }, "#000000");
         }
+        for (var r = 0; r < B_ROWS; r++) {
+            for (var c = 0; c < B_COLS; c++) {
+                if (!SCENE[r][c])
+                    continue;
+                ctx.fillStyle = SCENE[r][c];
+                ctx.fillRect(c, r, 1, 1);
+            }
+        }
         drawPoint(ctx, player.pos, 0.2, "#ff0000");
         var len = Math.tan(FOV * 0.5) * NEAR_PLANE;
         var np = add(player.pos, scale(hvUnitVectors(player.dir), NEAR_PLANE));
-        var npl = add(np, scale(rotate(normalize(sub(np, player.pos)), Math.PI * 0.5), len));
-        var npr = add(np, scale(rotate(normalize(sub(np, player.pos)), -1 * Math.PI * 0.5), len));
-        console.log(player.pos, np, npl);
+        var npl = sub(np, scale(rotate(sub(np, player.pos), Math.PI * 0.5), len));
+        var npr = add(np, scale(rotate(sub(np, player.pos), Math.PI * 0.5), len));
         drawLine(ctx, np, npl, "#ff0000");
         drawLine(ctx, np, npr, "#ff0000");
         drawLine(ctx, player.pos, npl, "#ff0000");
         drawLine(ctx, player.pos, npr, "#ff0000");
-        //for(;;) {
-        //    drawPoint(ctx, p2, 0.08, "#ff0000");
-        //	 drawLine(ctx, p1, p2, "#ff0000");
-        //    const cell: Point = getCellFromPoints(p1, p2);
-        //    if (isCellOutOfBoard(cell)) break;
-        //	 const p3: Point =  nextPoint(p1, p2);    
-        //    if (p3 === null) break;
-        //    p1 = p2;
-        //    p2 = p3;
-        //}
+        renderScene(screenCtx, ctx, player, npl, npr);
     }
     function init() {
+        var screen = document.getElementById("screen");
+        if (screen === null)
+            throw new Error("Failed to create screen.");
+        var screenCtx = screen.getContext("2d");
+        if (screenCtx === null)
+            throw new Error("Browser doesn't support 2D context");
+        screen.width = 800;
+        screen.height = 500;
         var sceneMap = document.getElementById("scene-map");
         if (sceneMap === null)
             throw new Error("Failed to create scene map.");
@@ -142,7 +180,31 @@
             pos: { x: B_COLS * 0.95, y: B_ROWS * 0.95 },
             dir: Math.PI * 1.25,
         };
-        drawSceneMap(ctx, player);
+        var handleKeyDown = function (evt) {
+            if (evt.repeat)
+                return;
+            switch (evt.key) {
+                case 'j': {
+                    player.pos = add(player.pos, scale(hvUnitVectors(player.dir), PLAYER_STEP_LEN));
+                    break;
+                }
+                case 'k': {
+                    player.pos = add(player.pos, scale(hvUnitVectors(player.dir), -1 * PLAYER_STEP_LEN));
+                    break;
+                }
+                case 'h': {
+                    player.dir -= Math.PI * 0.1;
+                    break;
+                }
+                case 'l': {
+                    player.dir += Math.PI * 0.1;
+                    break;
+                }
+            }
+            drawSceneMap(screenCtx, ctx, player);
+        };
+        window.addEventListener("keydown", handleKeyDown);
+        drawSceneMap(screenCtx, ctx, player);
     }
     init();
 })();
