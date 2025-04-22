@@ -19,7 +19,7 @@
 	 	[0, 0, "gold", "magenta", "blue", 0, 0, 0, 0, 0],
 	 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 	 ];
-	 const P_WIDTH: number = 300;
+	 const P_WIDTH: number = 500;
 	 const [S_WIDTH, S_HEIGHT] = getScreenSize();
 	 const PLAYER_STEP_LEN: number = 0.5;
    const player: Player = { 
@@ -228,22 +228,24 @@
    sceneMap.height = B_HEIGHT;
   
    const handleKeyDown = (evt: KeyboardEvent) => {
-     if (evt.repeat) return;
-
      switch (evt.key) {
-       case 'j': {
+       case 'j':
+	   case 'ArrowUp': {
                player.pos = add(player.pos, scale(hvProjections(player.dir), PLAYER_STEP_LEN));
                break;
              }
-       case 'k': {
+       case 'k':
+	   case 'ArrowDown': {
                player.pos = add(player.pos, scale(hvProjections(player.dir), -1 * PLAYER_STEP_LEN));
                break;
              }
-       case 'h': {
+       case 'h': 
+	   case 'ArrowLeft': {
                player.dir -= Math.PI * 0.1;
                break;
              }
-       case 'l': {
+       case 'l':
+	   case 'ArrowRight': {
                player.dir += Math.PI * 0.1;
                break;
              }

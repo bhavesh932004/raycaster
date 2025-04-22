@@ -17,12 +17,12 @@
         [0, 0, "gold", "magenta", "blue", 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     ];
-    var P_WIDTH = 300;
+    var P_WIDTH = 500;
     var _a = getScreenSize(), S_WIDTH = _a[0], S_HEIGHT = _a[1];
     var PLAYER_STEP_LEN = 0.5;
     var player = {
         pos: { x: B_COLS * 0.9, y: B_ROWS * 0.9 },
-        dir: Math.PI * 1.5
+        dir: Math.PI * 1.5,
     };
     function getScreenSize() {
         var app = document.getElementById("app");
@@ -199,22 +199,24 @@
     sceneMap.width = B_WIDTH;
     sceneMap.height = B_HEIGHT;
     var handleKeyDown = function (evt) {
-        if (evt.repeat)
-            return;
         switch (evt.key) {
-            case 'j': {
+            case 'j':
+            case 'ArrowUp': {
                 player.pos = add(player.pos, scale(hvProjections(player.dir), PLAYER_STEP_LEN));
                 break;
             }
-            case 'k': {
+            case 'k':
+            case 'ArrowDown': {
                 player.pos = add(player.pos, scale(hvProjections(player.dir), -1 * PLAYER_STEP_LEN));
                 break;
             }
-            case 'h': {
+            case 'h':
+            case 'ArrowLeft': {
                 player.dir -= Math.PI * 0.1;
                 break;
             }
-            case 'l': {
+            case 'l':
+            case 'ArrowRight': {
                 player.dir += Math.PI * 0.1;
                 break;
             }
