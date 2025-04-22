@@ -8,18 +8,22 @@
     var SCENE = [
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, "red", "blue", "green", "orange", 0, 0, 0],
-        [0, 0, 0, "yellow", 0, 0, 0, "purple", 0, 0],
-        [0, 0, 0, "blue", 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, "yellow", "magenta", "blue", 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, "red", "blue", "green", "orange", "purple", "pink", "silver", 0],
+        [0, 0, "yellow", 0, 0, 0, 0, 0, "lightgreen", 0],
+        [0, 0, "blue", 0, 0, 0, 0, 0, "skyblue", 0],
+        [0, 0, "yellow", 0, 0, "red", 0, 0, 0, 0],
+        [0, 0, "grey", 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, "cyan", 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, "gold", "magenta", "blue", 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     ];
     var P_WIDTH = 300;
     var _a = getScreenSize(), S_WIDTH = _a[0], S_HEIGHT = _a[1];
     var PLAYER_STEP_LEN = 0.5;
+    var player = {
+        pos: { x: B_COLS * 0.9, y: B_ROWS * 0.9 },
+        dir: Math.PI * 1.5
+    };
     function getScreenSize() {
         var app = document.getElementById("app");
         return [app.offsetWidth, app.offsetHeight];
@@ -174,55 +178,103 @@
         drawLine(ctx, np, npr, "#ff0000");
         drawLine(ctx, player.pos, npl, "#ff0000");
         drawLine(ctx, player.pos, npr, "#ff0000");
+        updatePlayer();
     }
-    function init() {
-        var screen = document.getElementById("screen");
-        if (screen === null)
-            throw new Error("Failed to create screen.");
-        var screenCtx = screen.getContext("2d");
-        if (screenCtx === null)
-            throw new Error("Browser doesn't support 2D context");
-        screen.width = S_WIDTH;
-        screen.height = S_HEIGHT;
-        var sceneMap = document.getElementById("scene-map");
-        if (sceneMap === null)
-            throw new Error("Failed to create scene map.");
-        var ctx = sceneMap.getContext("2d");
-        if (ctx === null)
-            throw new Error("Browser doesn't support 2D context");
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, B_WIDTH, B_HEIGHT);
-        sceneMap.width = B_WIDTH;
-        sceneMap.height = B_HEIGHT;
-        var player = {
-            pos: { x: B_COLS * 0.95, y: B_ROWS * 0.95 },
-            dir: Math.PI * 1.25,
-        };
-        var handleKeyDown = function (evt) {
-            if (evt.repeat)
-                return;
-            switch (evt.key) {
-                case 'j': {
-                    player.pos = add(player.pos, scale(hvProjections(player.dir), PLAYER_STEP_LEN));
-                    break;
-                }
-                case 'k': {
-                    player.pos = add(player.pos, scale(hvProjections(player.dir), -1 * PLAYER_STEP_LEN));
-                    break;
-                }
-                case 'h': {
-                    player.dir -= Math.PI * 0.1;
-                    break;
-                }
-                case 'l': {
-                    player.dir += Math.PI * 0.1;
-                    break;
+    var screen = document.getElementById("screen");
+    if (screen === null)
+        throw new Error("Failed to create screen.");
+    var screenCtx = screen.getContext("2d");
+    if (screenCtx === null)
+        throw new Error("Browser doesn't support 2D context");
+    screen.width = S_WIDTH;
+    screen.height = S_HEIGHT;
+    var sceneMap = document.getElementById("scene-map");
+    if (sceneMap === null)
+        throw new Error("Failed to create scene map.");
+    var ctx = sceneMap.getContext("2d");
+    if (ctx === null)
+        throw new Error("Browser doesn't support 2D context");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, B_WIDTH, B_HEIGHT);
+    sceneMap.width = B_WIDTH;
+    sceneMap.height = B_HEIGHT;
+    var handleKeyDown = function (evt) {
+        if (evt.repeat)
+            return;
+        switch (evt.key) {
+            case 'j': {
+                player.pos = add(player.pos, scale(hvProjections(player.dir), PLAYER_STEP_LEN));
+                break;
+            }
+            case 'k': {
+                player.pos = add(player.pos, scale(hvProjections(player.dir), -1 * PLAYER_STEP_LEN));
+                break;
+            }
+            case 'h': {
+                player.dir -= Math.PI * 0.1;
+                break;
+            }
+            case 'l': {
+                player.dir += Math.PI * 0.1;
+                break;
+            }
+        }
+        drawSceneMap(screenCtx, ctx, player);
+    };
+    setupEvents();
+    drawSceneMap(screenCtx, ctx, player);
+    function setupEvents() {
+        var dialog = document.getElementById("scene-map-dialog");
+        var colorInputsContainer = document.getElementById("scene-map-dialog-color-inputs");
+        var updateSceneMapBtn = document.getElementById("update-scene-map-btn");
+        var updateBtn = document.getElementById("scene-map-dialog-update-btn");
+        updateSceneMapBtn.addEventListener("click", openSceneMapDialog);
+        updateBtn.addEventListener("click", updateSceneMap);
+        function updateSceneMap() {
+            for (var r = 0; r < B_ROWS; r++) {
+                for (var c = 0; c < B_COLS; c++) {
+                    var colorInput = document.getElementById("color-input-".concat(r, "-").concat(c));
+                    SCENE[r][c] = colorInput.value === "#ffffff" ? 0 : colorInput.value;
+                    ;
                 }
             }
+            closeSceneMapDialog();
+        }
+        function closeSceneMapDialog() {
+            colorInputsContainer.innerHTML = "";
+            dialog.style.display = "none";
             drawSceneMap(screenCtx, ctx, player);
-        };
+        }
+        function openSceneMapDialog() {
+            for (var r = 0; r < B_ROWS; r++) {
+                var row = document.createElement("div");
+                row.style.display = "flex";
+                for (var c = 0; c < B_COLS; c++) {
+                    var cellInput = document.createElement("input");
+                    cellInput.setAttribute("type", "color");
+                    cellInput.setAttribute("value", "#ffffff");
+                    cellInput.setAttribute("id", "color-input-".concat(r, "-").concat(c));
+                    cellInput.style.width = "40px";
+                    cellInput.style.height = "40px";
+                    cellInput.style.border = "none";
+                    row.appendChild(cellInput);
+                }
+                colorInputsContainer.appendChild(row);
+            }
+            dialog.style.display = "flex";
+        }
         window.addEventListener("keydown", handleKeyDown);
-        drawSceneMap(screenCtx, ctx, player);
+        window.onclick = function (evt) {
+            if (evt.target == dialog)
+                closeSceneMapDialog();
+        };
     }
-    init();
+    function updatePlayer() {
+        var playerPositionXElem = document.getElementById("player-position-x");
+        var playerPositionYElem = document.getElementById("player-position-y");
+        var playerDirectionElem = document.getElementById("player-direction");
+        playerPositionXElem.innerHTML = player.pos.x.toFixed(2);
+        playerPositionYElem.innerHTML = player.pos.y.toFixed(2);
+        playerDirectionElem.innerHTML = "".concat(((player.dir * 180 / Math.PI) % 360).toFixed(2), " deg");
+    }
 })();

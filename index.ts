@@ -1,4 +1,6 @@
 (() => {
+	 type Point = { x: number, y: number };
+	 type Player = { pos: Point, dir: number };
 	 const B_WIDTH: number = 200;
 	 const B_HEIGHT: number = 200;
 	 const B_ROWS: number = 10;
@@ -8,22 +10,24 @@
 	 const SCENE: any[][] = [
 	 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 	 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-	 	[0, 0, 0, "red", "blue", "green", "orange", 0, 0, 0],
-	 	[0, 0, 0, "yellow", 0, 0, 0, "purple", 0, 0],
-	 	[0, 0, 0, "blue", 0, 0, 0, 0, 0, 0],
-	 	[0, 0, 0, "yellow", "magenta", "blue", 0, 0, 0, 0],
-	 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-	 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-	 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	 	[0, 0, "red", "blue", "green", "orange", "purple", "pink", "silver", 0],
+	 	[0, 0, "yellow", 0, 0, 0, 0, 0, "lightgreen", 0],
+	 	[0, 0, "blue", 0, 0, 0, 0, 0, "skyblue", 0],
+	 	[0, 0, "yellow", 0, 0, "red", 0, 0, 0, 0],
+	 	[0, 0, "grey", 0, 0, 0, 0, 0, 0, 0],
+	 	[0, 0, "cyan", 0, 0, 0, 0, 0, 0, 0],
+	 	[0, 0, "gold", "magenta", "blue", 0, 0, 0, 0, 0],
 	 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 	 ];
 	 const P_WIDTH: number = 300;
 	 const [S_WIDTH, S_HEIGHT] = getScreenSize();
 	 const PLAYER_STEP_LEN: number = 0.5;
-	 type Point = { x: number, y: number };
-	 type Player = { pos: Point, dir: number };
+   const player: Player = { 
+    pos: {x: B_COLS * 0.9, y: B_ROWS * 0.9},
+    dir: Math.PI * 1.5,
+   };
 	
-     function getScreenSize() {
+   function getScreenSize() {
 		 const app = document.getElementById("app");
 		 return [app.offsetWidth, app.offsetHeight];
 	 }
@@ -199,59 +203,114 @@
 		 drawLine(ctx, np, npr, "#ff0000");
 		 drawLine(ctx, player.pos, npl, "#ff0000");
 		 drawLine(ctx, player.pos, npr, "#ff0000");
+     
+     updatePlayer();
 	 }
 
-	 function init() {
-		 const screen = document.getElementById("screen") as HTMLCanvasElement | null;
-		 if (screen === null) 
-		     throw new Error("Failed to create screen.");
-		 const screenCtx = screen.getContext("2d") as CanvasRenderingContext2D | null;
-		 if (screenCtx === null) 
-		     throw new Error("Browser doesn't support 2D context");
-		 screen.width = S_WIDTH;
-		 screen.height = S_HEIGHT;
+   const screen = document.getElementById("screen") as HTMLCanvasElement | null;
+   if (screen === null) 
+       throw new Error("Failed to create screen.");
+   const screenCtx = screen.getContext("2d") as CanvasRenderingContext2D | null;
+   if (screenCtx === null) 
+       throw new Error("Browser doesn't support 2D context");
+   screen.width = S_WIDTH;
+   screen.height = S_HEIGHT;
 
-		 const sceneMap = document.getElementById("scene-map") as HTMLCanvasElement | null;
-		 if (sceneMap === null) 
-			 throw new Error("Failed to create scene map.");
-		 const ctx = sceneMap.getContext("2d") as CanvasRenderingContext2D | null;
-		 if (ctx === null) 
-			 throw new Error("Browser doesn't support 2D context");
-		 ctx.fillStyle = "#ffffff";
-		 ctx.fillRect(0, 0, B_WIDTH, B_HEIGHT);
-		 sceneMap.width = B_WIDTH;
-		 sceneMap.height = B_HEIGHT;
-		 const player: Player = { 
-			pos: {x: B_COLS * 0.95, y: B_ROWS * 0.95},
-			dir: Math.PI * 1.25,
-		 };
-		
-		 const handleKeyDown = (evt: KeyboardEvent) => {
-			 if (evt.repeat) return;
+   const sceneMap = document.getElementById("scene-map") as HTMLCanvasElement | null;
+   if (sceneMap === null) 
+     throw new Error("Failed to create scene map.");
+   const ctx = sceneMap.getContext("2d") as CanvasRenderingContext2D | null;
+   if (ctx === null) 
+     throw new Error("Browser doesn't support 2D context");
+   ctx.fillStyle = "#ffffff";
+   ctx.fillRect(0, 0, B_WIDTH, B_HEIGHT);
+   sceneMap.width = B_WIDTH;
+   sceneMap.height = B_HEIGHT;
+  
+   const handleKeyDown = (evt: KeyboardEvent) => {
+     if (evt.repeat) return;
 
-			 switch (evt.key) {
-				 case 'j': {
-							   player.pos = add(player.pos, scale(hvProjections(player.dir), PLAYER_STEP_LEN));
-							   break;
-						   }
-				 case 'k': {
-							   player.pos = add(player.pos, scale(hvProjections(player.dir), -1 * PLAYER_STEP_LEN));
-							   break;
-						   }
-				 case 'h': {
-							   player.dir -= Math.PI * 0.1;
-							   break;
-						   }
-				 case 'l': {
-							   player.dir += Math.PI * 0.1;
-							   break;
-						   }
-			 }
-			 drawSceneMap(screenCtx, ctx, player);
-		 };
-		 window.addEventListener("keydown", handleKeyDown);
-		 drawSceneMap(screenCtx, ctx, player);
-	 }
+     switch (evt.key) {
+       case 'j': {
+               player.pos = add(player.pos, scale(hvProjections(player.dir), PLAYER_STEP_LEN));
+               break;
+             }
+       case 'k': {
+               player.pos = add(player.pos, scale(hvProjections(player.dir), -1 * PLAYER_STEP_LEN));
+               break;
+             }
+       case 'h': {
+               player.dir -= Math.PI * 0.1;
+               break;
+             }
+       case 'l': {
+               player.dir += Math.PI * 0.1;
+               break;
+             }
+     }
+     drawSceneMap(screenCtx, ctx, player);
+   };
 
-	 init();
+   setupEvents();
+   drawSceneMap(screenCtx, ctx, player);
+   
+   function setupEvents() {
+     const dialog: HTMLElement = document.getElementById("scene-map-dialog");
+     const colorInputsContainer: HTMLElement = document.getElementById("scene-map-dialog-color-inputs");
+     const updateSceneMapBtn: HTMLElement = document.getElementById("update-scene-map-btn");
+     const updateBtn: HTMLElement = document.getElementById("scene-map-dialog-update-btn");
+     updateSceneMapBtn.addEventListener("click", openSceneMapDialog);
+     updateBtn.addEventListener("click", updateSceneMap);
+     
+     function updateSceneMap() {
+       for (let r = 0; r < B_ROWS; r++) {
+         for (let c = 0; c < B_COLS; c++) {
+           const colorInput: HTMLInputElement = document.getElementById(`color-input-${r}-${c}`);
+           SCENE[r][c] = colorInput.value === "#ffffff" ? 0 : colorInput.value;;
+         }
+       }
+       closeSceneMapDialog();
+     }
+
+     function closeSceneMapDialog() {
+       colorInputsContainer.innerHTML = "";
+       dialog.style.display = "none";
+       drawSceneMap(screenCtx, ctx, player);
+     }
+
+     function openSceneMapDialog() {
+       for (let r = 0; r < B_ROWS; r++) {
+         const row: HTMLDivElement = document.createElement("div");
+         row.style.display = "flex";
+         for (let c = 0; c < B_COLS; c++) {
+           const cellInput: HTMLInputElement = document.createElement("input");
+           cellInput.setAttribute("type", "color");
+           cellInput.setAttribute("value", "#ffffff");
+           cellInput.setAttribute("id", `color-input-${r}-${c}`);
+           cellInput.style.width = "40px";
+           cellInput.style.height = "40px";
+           cellInput.style.border = "none";
+           row.appendChild(cellInput);
+         }
+         colorInputsContainer.appendChild(row);
+       }
+        
+       dialog.style.display = "flex";
+     }
+
+     window.addEventListener("keydown", handleKeyDown);
+     window.onclick = (evt: Event) => {
+       if (evt.target == dialog) closeSceneMapDialog();
+     }
+   }
+  
+
+   function updatePlayer() {
+     const playerPositionXElem: HTMLElement = document.getElementById("player-position-x");
+     const playerPositionYElem: HTMLElement = document.getElementById("player-position-y");
+     const playerDirectionElem: HTMLElement = document.getElementById("player-direction");
+     playerPositionXElem.innerHTML = player.pos.x.toFixed(2);
+     playerPositionYElem.innerHTML = player.pos.y.toFixed(2);
+     playerDirectionElem.innerHTML = `${((player.dir * 180 / Math.PI) % 360).toFixed(2)} deg`;
+   }
 })();

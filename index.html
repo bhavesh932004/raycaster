@@ -18,15 +18,78 @@
 		position: absolute;
 		bottom: 1em;
 		left: 1em;
+    background-color: #fff;
+    padding: 1em;
+    display: flex;
+    flex-direction: column;
+    max-width: 200px;
+    row-gap: 0.5em;
 	}
+
+  h2{
+    margin: 0;
+  }
+  
+  #scene-map-dialog{
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1; /* Sit on top */
+    padding-top: 100px; /* Location of the box */
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgb(0,0,0); /* Fallback color */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+    align-items: center;
+    justify-content: center;
+  }
+  
+  #scene-map-dialog-content{
+    background-color: #fefefe;
+    margin: auto;
+    padding: 20px;
+    border: 1px solid #888;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    row-gap: 0.5rem;
+  }
+
+  #scene-map-dialog-update-btn{
+    width: 100px;
+  }
   </style>
 </head>
 <body>
   <div id="app">
   	<canvas id="screen"></canvas>
-	<div class="scene-map-container">
-  		<canvas id="scene-map"></canvas>
-	</div>
+    <div class="scene-map-container">
+      <h2>Scene Map</h2>
+      <canvas id="scene-map"></canvas>
+      <button id="update-scene-map-btn">Update Scene Map</button>
+      <div>
+        Player's X: 
+        <b><span id="player-position-x"><span></b>
+      </div>
+      <div> 
+        Player's Y: 
+        <b><span id="player-position-x"><span></b>
+        <b><span id="player-position-y"><span></b>
+      </div>
+      <div class="player_direction">
+        Player's direction:
+        <b><span id="player-direction"><span></b>
+      </div>
+    </div>
+    <div id="scene-map-dialog">
+      <div id="scene-map-dialog-content">
+        NOTE: White color corresponds to no wall
+        <div id="scene-map-dialog-color-inputs"></div>
+        <button id="scene-map-dialog-update-btn">Update</button>
+      </div>
+    </div>
   </div>
   <script src="index.js"></script>
 </body>
